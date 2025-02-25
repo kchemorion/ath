@@ -30,7 +30,6 @@ file(GLOB_RECURSE PROJECT_HEADERS src/*.h)
 file(GLOB_RECURSE PROJECT_SOURCES src/*.cc)
 message(STATUS "Project sources: ${PROJECT_SOURCES}")
 
-
 bdm_add_executable(${CMAKE_PROJECT_NAME}
                    HEADERS ${PROJECT_HEADERS}
                    SOURCES ${PROJECT_SOURCES}
@@ -46,4 +45,5 @@ bdm_add_test(${CMAKE_PROJECT_NAME}-test
              HEADERS ${TEST_HEADERS}
              LIBRARIES ${BDM_REQUIRED_LIBRARIES} ${CMAKE_PROJECT_NAME})
              
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+# Commented out Address Sanitizer to allow building with system libraries
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")

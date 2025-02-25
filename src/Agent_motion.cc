@@ -2,28 +2,17 @@
 
 namespace bdm {
 
-// Define the static variables once in the source file
-BrownianMotion::PositionSet* BrownianMotion::occupied_positions = nullptr;
-std::mutex BrownianMotion::position_mutex;
+// Initialize the static instance
+PositionTracker* PositionTracker::instance_ = nullptr;
 
 void BrownianMotion::Run(Agent* cell) {
     auto* random = Simulation::GetActive()->GetRandom();
-
-    // Thread-safe initialization of the static member
-    if (!occupied_positions) {
-        std::lock_guard<std::mutex> lock(position_mutex);
-        if (!occupied_positions) {
-            occupied_positions = new PositionSet();
-        }
-    }
+    auto* tracker = PositionTracker::GetInstance();
 
     Real3 former_position = cell->GetPosition();
 
     // Remove the agent's old position
-    {
-        std::lock_guard<std::mutex> lock(position_mutex);
-        occupied_positions->erase(former_position);
-    }
+    tracker->FreePosition(former_position);
 
     Real3 new_position;
     int max_attempts = 100;
@@ -36,8 +25,7 @@ void BrownianMotion::Run(Agent* cell) {
         new_position = former_position + displacement;
         attempt++;
 
-        std::lock_guard<std::mutex> lock(position_mutex);
-        if (occupied_positions->count(new_position) == 0) {
+        if (!tracker->IsPositionOccupied(new_position)) {
             break;
         }
     } while (attempt < max_attempts);
@@ -47,19 +35,7 @@ void BrownianMotion::Run(Agent* cell) {
     }
 
     cell->SetPosition(new_position);
-
-    {
-        std::lock_guard<std::mutex> lock(position_mutex);
-        occupied_positions->insert(new_position);
-    }
-}
-
-void BrownianMotion::Cleanup() {
-    std::lock_guard<std::mutex> lock(position_mutex);
-    delete occupied_positions;
-    occupied_positions = nullptr;
-    std::cout << "Cleanup completed.\n";
+    tracker->OccupyPosition(new_position);
 }
 
 }  // namespace bdm
-

@@ -175,20 +175,39 @@ inline int Simulate(int argc, const char** argv) {
     cell->AddBehavior(new BrownianMotion());
     ctxt->AddAgent(cell);  // put the created lipid molecules in our cell structure
   }
-  // Run the simulations
-  simulation.GetScheduler()->Simulate(100);
   
-  // Ensure memory cleanup
-  BrownianMotion::Cleanup();
-
-  std::cout << "Simulation completed successfully!" << std::endl;
-  return 0;
+  try {
+    // Run the simulations
+    simulation.GetScheduler()->Simulate(100);
+    
+    // Ensure memory cleanup
+    PositionTracker::Cleanup();
+  
+    std::cout << "Simulation completed successfully!" << std::endl;
+    return 0;
+  } catch (const std::exception& e) {
+    // Attempt cleanup even in case of exception
+    try {
+      PositionTracker::Cleanup();
+    } catch (...) {
+      std::cerr << "Error during emergency cleanup" << std::endl;
+    }
+    
+    std::cerr << "Simulation failed with error: " << e.what() << std::endl;
+    return 1;
+  } catch (...) {
+    // Handle unknown exceptions
+    try {
+      PositionTracker::Cleanup();
+    } catch (...) {
+      std::cerr << "Error during emergency cleanup" << std::endl;
+    }
+    
+    std::cerr << "Simulation failed with unknown error" << std::endl;
+    return 1;
+  }
 }
 
 }  // namespace bdm
 
 #endif  // ATHEROSCLEROSIS_H_
-
-
-
-  
